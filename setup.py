@@ -14,6 +14,9 @@ setup(
     author='Krzysztof Dorosz',
     author_email='cypreess@gmail.com',
     include_package_data=True,
+    install_requires=[
+        'typing_extensions>=3.7.0,<4.0',
+    ],
     extras_require={
         'payu': [
             'django-celery>=3.0.11',
