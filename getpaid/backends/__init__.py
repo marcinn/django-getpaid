@@ -58,7 +58,7 @@ class PaymentProcessorBase(object):
         if template:
             return Template(template).render(Context({"payment": payment, "order": order}))
         else:
-            return unicode(order)
+            return str(order)
 
     def get_gateway_url(self, request):
         """

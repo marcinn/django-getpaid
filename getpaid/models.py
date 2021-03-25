@@ -142,6 +142,6 @@ def register_to_payment(order_class, **kwargs):
     # Now build models for backends
 
     backend_models_modules = import_backend_modules('models')
-    for backend_name, models in backend_models_modules.items():
+    for backend_name, models in list(backend_models_modules.items()):
         app_cache.register_models(backend_name, *models.build_models(Payment))
     return Payment

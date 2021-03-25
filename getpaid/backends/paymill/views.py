@@ -5,7 +5,7 @@ from django.http import HttpResponseBadRequest
 from . import PaymentProcessor
 from .forms import PaymillForm
 from getpaid.models import Payment
-import pymill
+from . import pymill
 
 
 class PaymillView(FormView):

@@ -1,7 +1,7 @@
 from decimal import Decimal
 import hashlib
 import logging
-import urllib
+import urllib.request, urllib.parse, urllib.error
 import datetime
 from django.contrib.sites.models import Site
 from django.core.exceptions import ImproperlyConfigured
@@ -32,7 +32,7 @@ class PaymentProcessor(PaymentProcessorBase):
     def compute_sig(params, fields, key):
         text = ''
         for field in fields:
-            text += unicode(params.get(field, '')).encode('utf-8')
+            text += str(params.get(field, '')).encode('utf-8')
         text += key
         return hashlib.md5(text).hexdigest()
 
@@ -138,8 +138,8 @@ class PaymentProcessor(PaymentProcessorBase):
         if PaymentProcessor.get_backend_setting('method', 'get').lower() == 'post':
             return self._GATEWAY_URL, 'POST', params
         elif PaymentProcessor.get_backend_setting('method', 'get').lower() == 'get':
-            for key in params.keys():
-                params[key] = unicode(params[key]).encode('utf-8')
-            return self._GATEWAY_URL + '?' + urllib.urlencode(params), "GET", {}
+            for key in list(params.keys()):
+                params[key] = str(params[key]).encode('utf-8')
+            return self._GATEWAY_URL + '?' + urllib.parse.urlencode(params), "GET", {}
         else:
             raise ImproperlyConfigured('Transferuj.pl payment backend accepts only GET or POST')

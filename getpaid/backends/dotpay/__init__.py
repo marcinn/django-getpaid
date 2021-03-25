@@ -2,7 +2,7 @@ import datetime
 from decimal import Decimal
 import hashlib
 import logging
-import urllib
+import urllib.request, urllib.parse, urllib.error
 from django.contrib.sites.models import Site
 from django.core.exceptions import ImproperlyConfigured
 from django.core.urlresolvers import reverse
@@ -35,7 +35,7 @@ class PaymentProcessor(PaymentProcessorBase):
 
     @staticmethod
     def compute_sig(params, fields, PIN):
-        text = PIN + ":" + (u":".join(map(lambda field: params.get(field, ''), fields)))
+        text = PIN + ":" + (":".join([params.get(field, '') for field in fields]))
         return hashlib.md5(text).hexdigest()
 
     @staticmethod
@@ -147,8 +147,8 @@ class PaymentProcessor(PaymentProcessorBase):
         if PaymentProcessor.get_backend_setting('method', 'get').lower() == 'post':
             return self._GATEWAY_URL, 'POST', params
         elif PaymentProcessor.get_backend_setting('method', 'get').lower() == 'get':
-            for key in params.keys():
-                params[key] = unicode(params[key]).encode('utf-8')
-            return self._GATEWAY_URL + '?' + urllib.urlencode(params), "GET", {}
+            for key in list(params.keys()):
+                params[key] = str(params[key]).encode('utf-8')
+            return self._GATEWAY_URL + '?' + urllib.parse.urlencode(params), "GET", {}
         else:
             raise ImproperlyConfigured('Dotpay payment backend accepts only GET or POST')

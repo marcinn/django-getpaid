@@ -1,8 +1,8 @@
 from decimal import Decimal
 import hashlib
 import logging
-import urllib
-import urllib2
+import urllib.request, urllib.parse, urllib.error
+import urllib.request, urllib.error, urllib.parse
 from django.core.exceptions import ImproperlyConfigured
 from django.utils.translation import ugettext_lazy as _
 import time
@@ -46,7 +46,7 @@ class PaymentProcessor(PaymentProcessorBase):
     def compute_sig(params, fields, key):
         text = ''
         for field in fields:
-            text += unicode(params.get(field, '')).encode('utf-8')
+            text += str(params.get(field, '')).encode('utf-8')
         text += key
         return hashlib.md5(text).hexdigest()
 
@@ -128,15 +128,15 @@ class PaymentProcessor(PaymentProcessorBase):
             params['sig'] = PaymentProcessor.compute_sig(params, self._REQUEST_SIG_FIELDS, key1)
 
         if PaymentProcessor.get_backend_setting('method', 'get').lower() == 'post':
-            logger.info(u'New payment using POST: %s' % params)
+            logger.info('New payment using POST: %s' % params)
             return self._GATEWAY_URL + 'UTF/NewPayment', 'POST', params
         elif PaymentProcessor.get_backend_setting('method', 'get').lower() == 'get':
-            logger.info(u'New payment using GET: %s' % params)
-            for key in params.keys():
-                params[key] = unicode(params[key]).encode('utf-8')
-            return self._GATEWAY_URL + 'UTF/NewPayment?' + urllib.urlencode(params), 'GET', {}
+            logger.info('New payment using GET: %s' % params)
+            for key in list(params.keys()):
+                params[key] = str(params[key]).encode('utf-8')
+            return self._GATEWAY_URL + 'UTF/NewPayment?' + urllib.parse.urlencode(params), 'GET', {}
         else:
-            logger.error(u'New payment raises error - bad HTTP method')
+            logger.error('New payment raises error - bad HTTP method')
             raise ImproperlyConfigured('PayU payment backend accepts only GET or POST')
 
     def get_payment_status(self, session_id):
@@ -146,27 +146,27 @@ class PaymentProcessor(PaymentProcessorBase):
 
         params['sig'] = PaymentProcessor.compute_sig(params, self._GET_SIG_FIELDS, key1)
 
-        for key in params.keys():
-            params[key] = unicode(params[key]).encode('utf-8')
+        for key in list(params.keys()):
+            params[key] = str(params[key]).encode('utf-8')
 
-        data = urllib.urlencode(params)
+        data = urllib.parse.urlencode(params)
         url = self._GATEWAY_URL + 'UTF/Payment/get/txt'
-        request = urllib2.Request(url, data)
-        response = urllib2.urlopen(request)
+        request = urllib.request.Request(url, data)
+        response = urllib.request.urlopen(request)
         response_params = PaymentProcessor._parse_text_response(response.read().decode('utf-8'))
 
         if not response_params['status'] == 'OK':
-            logger.warning(u'Payment status error: %s' % response_params)
+            logger.warning('Payment status error: %s' % response_params)
             return
 
         if PaymentProcessor.compute_sig(response_params, self._GET_RESPONSE_SIG_FIELDS, key2) == response_params[
             'trans_sig']:
             if not (int(response_params['trans_pos_id']) == int(params['pos_id']) or int(
                     response_params['trans_order_id']) == self.payment.pk):
-                logger.error(u'Payment status wrong pos_id and/or order id: %s' % response_params)
+                logger.error('Payment status wrong pos_id and/or order id: %s' % response_params)
                 return
 
-            logger.info(u'Fetching payment status: %s' % response_params)
+            logger.info('Fetching payment status: %s' % response_params)
 
             self.payment.external_id = response_params['trans_id']
 
@@ -185,32 +185,32 @@ class PaymentProcessor(PaymentProcessorBase):
                 self.payment.on_failure()
 
         else:
-            logger.error(u'Payment status wrong response signature: %s' % response_params)
+            logger.error('Payment status wrong response signature: %s' % response_params)
 
     def accept_payment(self, session_id):
         params = {'pos_id': PaymentProcessor.get_backend_setting('pos_id'), 'session_id': session_id, 'ts': time.time()}
         key1 = PaymentProcessor.get_backend_setting('key1')
         key2 = PaymentProcessor.get_backend_setting('key2')
         params['sig'] = PaymentProcessor.compute_sig(params, self._GET_SIG_FIELDS, key1)
-        for key in params.keys():
-            params[key] = unicode(params[key]).encode('utf-8')
-        data = urllib.urlencode(params)
+        for key in list(params.keys()):
+            params[key] = str(params[key]).encode('utf-8')
+        data = urllib.parse.urlencode(params)
         url = self._GATEWAY_URL + 'UTF/Payment/confirm/txt'
-        request = urllib2.Request(url, data)
-        response = urllib2.urlopen(request)
+        request = urllib.request.Request(url, data)
+        response = urllib.request.urlopen(request)
         response_params = PaymentProcessor._parse_text_response(response.read().decode('utf-8'))
         if response_params['status'] == 'OK':
             if PaymentProcessor.compute_sig(response_params, self._GET_ACCEPT_SIG_FIELDS, key2) != response_params[
                 'trans_sig']:
-                logger.error(u'Wrong signature for Payment/confirm response: %s' % response_params)
+                logger.error('Wrong signature for Payment/confirm response: %s' % response_params)
                 return
             if int(response_params['trans_pos_id']) != int(params['pos_id']):
-                logger.error(u'Wrong pos_id for Payment/confirm response: %s' % response_params)
+                logger.error('Wrong pos_id for Payment/confirm response: %s' % response_params)
                 return
 
-            logger.info(u'Payment accepted: %s' % response_params)
+            logger.info('Payment accepted: %s' % response_params)
         else:
-            logger.warning(u'Payment not accepted, error: %s' % response_params)
+            logger.warning('Payment not accepted, error: %s' % response_params)
 
 
     @staticmethod
@@ -222,11 +222,5 @@ class PaymentProcessor(PaymentProcessorBase):
         into dict
         """
         return dict(
-            map(lambda x: (x[0].rstrip(), x[1].lstrip()),
-                filter(
-                    lambda l: len(l) == 2,
-                    map(lambda l: l.split(':', 1),
-                        text.splitlines())
-                )
-            )
+            [(x[0].rstrip(), x[1].lstrip()) for x in [l for l in [l.split(':', 1) for l in text.splitlines()] if len(l) == 2]]
         )

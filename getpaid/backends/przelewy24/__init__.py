@@ -9,8 +9,8 @@ from decimal import Decimal
 import hashlib
 import logging
 import time
-import urllib
-import urllib2
+import urllib.request, urllib.parse, urllib.error
+import urllib.request, urllib.error, urllib.parse
 import datetime
 
 from django.contrib.sites.models import Site
@@ -47,7 +47,7 @@ class PaymentProcessor(PaymentProcessorBase):
     def compute_sig(params, fields, crc):
         params = params.copy()
         params.update({'crc': crc})
-        text = "|".join(map(lambda field: unicode(params.get(field, '')).encode('utf-8'), fields))
+        text = "|".join([str(params.get(field, '')).encode('utf-8') for field in fields])
         return hashlib.md5(text).hexdigest()
 
     @staticmethod
@@ -79,23 +79,23 @@ class PaymentProcessor(PaymentProcessorBase):
         crc = PaymentProcessor.get_backend_setting('crc')
         params['p24_crc'] = PaymentProcessor.compute_sig(params, self._STATUS_SIG_FIELDS, crc)
 
-        for key in params.keys():
-            params[key] = unicode(params[key]).encode('utf-8')
+        for key in list(params.keys()):
+            params[key] = str(params[key]).encode('utf-8')
 
-        data = urllib.urlencode(params)
+        data = urllib.parse.urlencode(params)
         url = self._SANDBOX_GATEWAY_CONFIRM_URL if PaymentProcessor.get_backend_setting('sandbox',
                                                                                         False) else self._GATEWAY_CONFIRM_URL
 
         self.payment.external_id = params['p24_order_id']
 
-        request = urllib2.Request(url, data)
+        request = urllib.request.Request(url, data)
         try:
-            response = urllib2.urlopen(request).read()
+            response = urllib.request.urlopen(request).read()
         except Exception:
             logger.exception('Error while getting payment status change %s data=%s' % (url, str(params)))
             return
 
-        response_list = filter(lambda ll: ll, map(lambda l: l.strip(), response.splitlines()))
+        response_list = [ll for ll in [l.strip() for l in response.splitlines()] if ll]
 
         if len(response_list) >= 2 and response_list[0] == 'RESULT' and response_list[1] == 'TRUE':
             logger.info('Payment accepted %s' % str(params))
