@@ -7,7 +7,7 @@ setup(
     name='django-getpaid',
     description='Multi-broker payment processor for django',
     long_description=long_description,
-    version='1.6.1-dev1',
+    version='1.6.0-dev1',
     packages=find_packages(),
     url='https://github.com/cypreess/django-getpaid',
     license='MIT',
