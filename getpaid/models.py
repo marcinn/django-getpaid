@@ -1,11 +1,15 @@
+import sys
+from datetime import datetime
+
 from django.db import models
+from django.db.models.loading import cache as app_cache
+from django.db.models.loading import register_models
 from django.utils.timezone import utc
 from django.utils.translation import ugettext_lazy as _
-from datetime import datetime
-import sys
-from abstract_mixin import AbstractMixin
-import signals
-from utils import import_backend_modules
+
+from . import signals
+from .abstract_mixin import AbstractMixin
+from .utils import import_backend_modules
 
 PAYMENT_STATUS_CHOICES = (
         ('new', _("new")),
@@ -39,7 +43,7 @@ class PaymentFactory(models.Model, AbstractMixin):
     class Meta:
         abstract = True
 
-    def __unicode__(self):
+    def __str__(self):
         return _("Payment #%(id)d") % {'id': self.id}
 
     @classmethod
@@ -111,7 +115,6 @@ class PaymentFactory(models.Model, AbstractMixin):
         self.change_status('failed')
 
 
-from django.db.models.loading import cache as app_cache, register_models
 #from utils import import_backend_modules
 
 
