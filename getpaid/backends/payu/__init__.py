@@ -222,7 +222,7 @@ class PaymentProcessor(PaymentProcessorBase):
         into dict
         """
         return dict(
-            map(lambda (k, v): (k.rstrip(), v.lstrip()),
+            map(lambda x: (x[0].rstrip(), x[1].lstrip()),
                 filter(
                     lambda l: len(l) == 2,
                     map(lambda l: l.split(':', 1),
