@@ -117,7 +117,7 @@ class Pymill():
             rf = self.s.put
         else:
             rf = self.s.post
-        if params is not () and cr != "DELETE"and cr != "PUT":
+        if not params and not cr == "DELETE" and not cr == "PUT":
             rf = self.s.post
         r = None
         if(ch):
