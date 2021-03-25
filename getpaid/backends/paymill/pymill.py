@@ -546,6 +546,6 @@ class Pymill():
 if __name__ == "__main__":
     p = Pymill("YOURPRIVATEKEYHERE")
     cc = (p.getcards())["data"][0]["id"]
-    print p.getcarddetails(cc)
+    #print p.getcarddetails(cc)
     #print p.transact(amount=300,code="86055500",account="1234512345",holder="Max Mustermann",description="debittest")
     #print p.transact(amount=300,payment=cc,description="pymilltest")
