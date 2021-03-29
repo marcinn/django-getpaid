@@ -2,8 +2,7 @@ import sys
 from datetime import datetime
 
 from django.db import models
-from django.db.models.loading import cache as app_cache
-from django.db.models.loading import register_models
+from django import apps
 from django.utils.timezone import utc
 from django.utils.translation import ugettext_lazy as _
 
@@ -48,7 +47,7 @@ class PaymentFactory(models.Model, AbstractMixin):
 
     @classmethod
     def contribute(cls, order, **kwargs):
-        return {'order': models.ForeignKey(order, **kwargs)}
+        return {'order': models.ForeignKey(order, on_delete=models.CASCADE, **kwargs)}
 
     @classmethod
     def create(cls, order, backend):
@@ -143,5 +142,6 @@ def register_to_payment(order_class, **kwargs):
 
     backend_models_modules = import_backend_modules('models')
     for backend_name, models in list(backend_models_modules.items()):
-        app_cache.register_models(backend_name, *models.build_models(Payment))
+        for built_model in models.build_models(Payment):
+            apps.register_model(backend_name, *models.build_models(Payment))
     return Payment
